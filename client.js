@@ -5,7 +5,7 @@ function clone(json) {
   return JSON.parse(JSON.stringify(json));
 }
 
-export default function client({url = "ws://localhost:7171"} = {}) {
+export default function client({url = "wss://server.uwu.games"} = {}) {
   var ws = new WebSocket(url);
   //var Posts = {};
   var watching = {};
