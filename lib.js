@@ -118,13 +118,13 @@ function states_new() {
 // It only keeps log(N) states, where N is the amount of ticks recorded
 function states_push(states, new_state) {
   if (states === null) {
-    return {bit: 0, state: new_state, older: null};
+    return {bit: 0, current: new_state, older: null};
   } else {
-    var {bit, state, older} = states;
+    var {bit, current, older} = states;
     if (bit === 0) {
-      return {bit: 1, state, older};
+      return {bit: 1, current, older};
     } else {
-      return {bit: 0, state: new_state, older: states_push(older, state)};
+      return {bit: 0, current: new_state, older: states_push(older, current)};
     }
   }
 }
@@ -134,8 +134,8 @@ function states_before(states, tick) {
   if (states === null) {
     return null;
   } else {
-    if (states.state.tick < tick) {
-      return states.state;
+    if (states.current.tick < tick) {
+      return states.current;
     } else {
       return latest(states.older, tick);
     }

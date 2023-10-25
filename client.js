@@ -3,7 +3,7 @@ var WebSocket = require("isomorphic-ws");
 
 module.exports = function client({url = "ws://localhost:7171"} = {}) {
   var ws = new WebSocket(url);
-  var Posts = {};
+  //var Posts = {};
   var watching = {};
 
   // Waits ws to be ready and then sends buffer to server
@@ -60,7 +60,7 @@ module.exports = function client({url = "ws://localhost:7171"} = {}) {
         lib.u8_to_hex(lib.WATCH),
         room_name,
       ]);
-      Posts[room_name] = [];
+      //Posts[room_name] = [];
       ws_send(msge_buff); 
     }
   };
@@ -84,11 +84,6 @@ module.exports = function client({url = "ws://localhost:7171"} = {}) {
     return Date.now() + delta_time;  
   };
 
-  // Returns the best estimative of the server's current tick
-  function get_tick() {
-    return Math.floor((Date.now() + delta_time) / 62.5);
-  };
-
   // Asks the server for its current time
   function ask_time() {
     last_ask_time = Date.now();
@@ -100,24 +95,49 @@ module.exports = function client({url = "ws://localhost:7171"} = {}) {
   };
 
   // Creates a rollback state computer instance
-  // Arguments:
   // - room: the room to watch
-  // - init: the initial state
-  // - tick(state,time): processes a tick, returning a new state
-  // - txfn(state,event): processes events, returning a new state
-  function rollback_state(room, init, tick, txfn) {
-    var posts = [];
-    var states = lib.states_new();
+  // - on_init(delta,event): return the initial state
+  // - on_tick(state,delta): processes ticks, returning a new state
+  // - on_post(state,event): processes events, returning a new state
+  // Currently it only caches the last post's state.
+  function roller({room, user, on_init, on_tick, on_post}) {
+    var state = null;
+
     watch_room(room);
-    on_post(function(post) {
-      // Stores post
-      posts.push(post);
-      // Removes states after this post's tick
-      // TODO
-      // Computes delta time
-      // TODO
-    });
-    // TODO ...
+
+    on_post_callback = function(post) {
+      var post_time = parseInt(post.time, 16);
+      // If it is the first post, initialize the state
+      if (state === null) {
+        state = {
+          time: post_time,
+          value: on_init(post_time / 1000, post),
+        };
+      // Otherwise, advance it up to the post's time, and handle the post
+      } else {
+        state.value = on_tick(state.value, (post_time - state.time) / 1000);
+        state.value = on_post(state.value, post);
+        state.time = post_time;
+      }
+    };
+
+    return {
+      post: (data) => {
+        return send_post(room, user, data);
+      },
+      get_state: () => {
+        return on_tick(state.value, (get_time() - state.time) / 1000);
+      },
+      get_time: () => {
+        return get_time();
+      },
+      get_ping: () => {
+        return ping;
+      },
+      destroy: () => {
+        unwatch_room(room);
+      },
+    };
   }
 
   ws.binaryType = "arraybuffer";
@@ -138,12 +158,12 @@ module.exports = function client({url = "ws://localhost:7171"} = {}) {
     //console.log("receiving", msge);
     if (msge[0] === lib.SHOW) {
       var room = lib.bytes_to_hex(msge.slice(1, 9));
-      var tick = lib.bytes_to_hex(msge.slice(9, 17));
+      var time = lib.bytes_to_hex(msge.slice(9, 17));
       var user = lib.bytes_to_hex(msge.slice(17, 25));
       var data = lib.bytes_to_hex(msge.slice(25, msge.length));
-      Posts[room].push({tick, user, data});
+      //Posts[room].push({time, user, data});
       if (on_post_callback) {
-        on_post_callback({room, tick, user, data}, Posts);
+        on_post_callback({room, time, user, data});
       }
     };
     if (msge[0] === lib.TIME) {
@@ -162,13 +182,13 @@ module.exports = function client({url = "ws://localhost:7171"} = {}) {
   };
 
   return {
+    roller,
     on_init,
     on_post,
     send_post,
     watch_room,
     unwatch_room,
     get_time,
-    get_tick,
     lib,
   };
 };

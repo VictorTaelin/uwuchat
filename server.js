@@ -189,4 +189,10 @@ wss.on("connection", function connection(ws) {
   });
 });
 
+process.on("SIGINT", function() {
+  console.log("\nClosing server...");
+  wss.close();
+  process.exit();
+});
+
 console.log("Started server on ws://localhost:"+port+".");

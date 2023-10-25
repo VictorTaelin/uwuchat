@@ -1,4 +1,4 @@
-var client = require("./client.js");
+var client = require("./../client.js");
 var api = client({url: "ws://localhost:7171"});
 
 // When connected, watches room 0 and makes an example post.
@@ -31,3 +31,8 @@ api.on_post((post, Posts) => {
   //console.log(JSON.stringify(Posts, null, 2));
 });
 
+process.on("SIGINT", function() {
+  console.log("Closing client...");
+  wss.close();
+  process.exit();
+});
