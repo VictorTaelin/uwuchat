@@ -1,0 +1,26 @@
+{
+  "name": "uwuchat",
+  "version": "0.1.0",
+  "description": "uwuchat",
+  "main": "client.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kindelia/Kind.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Kindelia/Kind/issues"
+  },
+  "homepage": "https://github.com/Kindelia/Kind#readme",
+  "dependencies": {
+    "fs-extra": "^9.1.0",
+    "isomorphic-ws": "^4.0.1",
+    "nano-ethereum-signer": "^0.1.2",
+    "ws": "^7.4.6"
+  }
+}
