@@ -4,7 +4,7 @@ var client = require("./../client.js")({url: "ws://localhost:7171"});
 var roller = client.roller({
 
   // Room ID
-  room: "0000000000000556",
+  room: "0000000000000558",
 
   // User ID
   user: "0000000000000000",
@@ -32,6 +32,7 @@ var roller = client.roller({
       count: state.count + dt,
     };
   },
+
 });
 
 // Every second, add 255 to the global counter.
@@ -41,8 +42,13 @@ setInterval(() => {
 
 // At 30 FPS,  show the curent global counter.
 setInterval(() => {
-  console.log(roller.get_state());
-}, 100);
+  let state = roller.get_state();
+  if (state) {
+    console.log(state.count);
+  } else {
+    console.log("game hasn't started!");
+  }
+}, 1000 / 30);
 
 process.on("SIGINT", function() {
   console.log("Closing client...");
