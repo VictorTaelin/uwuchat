@@ -1,7 +1,11 @@
-var lib = require("./lib.js");
-var WebSocket = require("isomorphic-ws");
+import lib from "./lib.js";
+import WebSocket from "isomorphic-ws";
 
-module.exports = function client({url = "ws://localhost:7171"} = {}) {
+function clone(json) {
+  return JSON.parse(JSON.stringify(json));
+}
+
+export default function client({url = "ws://localhost:7171"} = {}) {
   var ws = new WebSocket(url);
   //var Posts = {};
   var watching = {};
@@ -37,10 +41,10 @@ module.exports = function client({url = "ws://localhost:7171"} = {}) {
   }
 
   // Sends a signed post to a room on the server
-  function send_post(post_room, post_user, post_data) {
-    var post_room = lib.check_hex(64, post_room);
-    var post_user = lib.check_hex(64, post_user);
-    var post_data = lib.check_hex(null, post_data);
+  function send_post(post_room, post_user, post_json) {
+    var post_room = lib.u64_to_hex(post_room);
+    var post_user = lib.u64_to_hex(post_user);
+    var post_data = lib.json_to_hex(post_json);
     var msge_buff = lib.hexs_to_bytes([
       lib.u8_to_hex(lib.POST),
       post_room,
@@ -51,29 +55,24 @@ module.exports = function client({url = "ws://localhost:7171"} = {}) {
   };
 
   // Starts watching a room
-  function watch_room(room_name) {
-    var room_name = room_name.toLowerCase();
-    if (!watching[room_name]) {
-      watching[room_name] = true;
-      var room_name = lib.check_hex(64, room_name);
+  function watch_room(room_id) {
+    if (!watching[room_id]) {
+      watching[room_id] = true;
       var msge_buff = lib.hexs_to_bytes([
         lib.u8_to_hex(lib.WATCH),
-        room_name,
+        lib.u64_to_hex(room_id),
       ]);
-      //Posts[room_name] = [];
       ws_send(msge_buff); 
     }
   };
 
   // Stops watching a room
-  function unwatch_room(room_name) {
-    var room_name = room_name.toLowerCase();
-    if (watching[room_name]) {
-      watching[room_name] = false;
-      var room_name = lib.check_hex(64, room_name);
+  function unwatch_room(room_id) {
+    if (watching[room_id]) {
+      watching[room_id] = false;
       var msge_buff = lib.hexs_to_bytes([
         lib.u8_to_hex(lib.UNWATCH),
-        room_name,
+        lib.u64_to_hex(room_id),
       ]);
       ws_send(msge_buff);
     }
@@ -96,28 +95,42 @@ module.exports = function client({url = "ws://localhost:7171"} = {}) {
 
   // Creates a rollback state computer instance
   // - room: the room to watch
-  // - on_init(delta,event): return the initial state
-  // - on_tick(state,delta): processes ticks, returning a new state
-  // - on_post(state,event): processes events, returning a new state
+  // - on_init(time,user,data): return the initial state
+  // - on_post(state,time,user,data): processes events, returning a new state
+  // - on_pass(state,time,delta): processes passage of time, returning a new state
+  // Optionally, instead of 'on_pass', you can instead pass a:
+  // - [fps,on_tick(state)]: processes a single tick, returning a new state
   // Currently it only caches the last post's state.
-  function roller({room, user, on_init, on_tick, on_post}) {
+  function roller({room, user, on_init, on_pass, on_post, on_tick}) {
     var state = null;
 
     watch_room(room);
 
+    // Utility: let user implement on_tick+fps, rather than on_pass
+    if (on_tick !== undefined) {
+      var fps = on_tick[0];
+      on_pass = function(state, time, dt) {
+        var init_tick = Math.floor((time +  0) * fps);
+        var last_tick = Math.floor((time + dt) * fps);
+        for (var t = init_tick; t < last_tick; ++t) {
+          state = on_tick[1](state);
+        }
+        return state;
+      }
+    }
+
     on_post_callback = function(post) {
-      var post_time = parseInt(post.time, 16);
       // If it is the first post, initialize the state
       if (state === null) {
         state = {
-          time: post_time,
-          value: on_init(post_time / 1000, post),
+          time: post.time,
+          value: on_init(post.time / 1000, post.user, post.data),
         };
       // Otherwise, advance it up to the post's time, and handle the post
       } else {
-        state.value = on_tick(state.value, (post_time - state.time) / 1000);
-        state.value = on_post(state.value, post);
-        state.time = post_time;
+        state.value = on_pass(state.value, state.time / 1000, (post.time - state.time) / 1000);
+        state.value = on_post(state.value, post.time / 1000, post.user, post.data);
+        state.time = post.time;
       }
     };
 
@@ -126,7 +139,12 @@ module.exports = function client({url = "ws://localhost:7171"} = {}) {
         return send_post(room, user, data);
       },
       get_state: () => {
-        return state ? on_tick(state.value, (get_time() - state.time) / 1000) : null;
+        if (state) {
+          var send_state = clone(state);
+          return on_pass(send_state.value, send_state.time / 1000, (get_time() - send_state.time) / 1000);
+        } else {
+          return null;
+        }
       },
       get_time: () => {
         return get_time();
@@ -157,10 +175,10 @@ module.exports = function client({url = "ws://localhost:7171"} = {}) {
     var msge = new Uint8Array(msge.data);
     //console.log("receiving", msge);
     if (msge[0] === lib.SHOW) {
-      var room = lib.bytes_to_hex(msge.slice(1, 9));
-      var time = lib.bytes_to_hex(msge.slice(9, 17));
-      var user = lib.bytes_to_hex(msge.slice(17, 25));
-      var data = lib.bytes_to_hex(msge.slice(25, msge.length));
+      var room = lib.hex_to_u64(lib.bytes_to_hex(msge.slice(1, 9)));
+      var time = lib.hex_to_u64(lib.bytes_to_hex(msge.slice(9, 17)));
+      var user = lib.hex_to_u64(lib.bytes_to_hex(msge.slice(17, 25)));
+      var data = lib.hex_to_json(lib.bytes_to_hex(msge.slice(25, msge.length)));
       //Posts[room].push({time, user, data});
       if (on_post_callback) {
         on_post_callback({room, time, user, data});
@@ -192,4 +210,3 @@ module.exports = function client({url = "ws://localhost:7171"} = {}) {
     lib,
   };
 };
-

@@ -1,43 +1,41 @@
-var client = require("./../client.js")({url: "ws://localhost:7171"});
+import client from "./../client.js";
+const uwuchat = client({url: "ws://localhost:7171"});
 
 // Counter
-var roller = client.roller({
+var roller = uwuchat.roller({
 
   // Room ID
-  room: "0000000000000558",
+  room: 0x500,
 
   // User ID
-  user: "0000000000000000",
+  user: 0x123,
 
   // Initial state is just a counter
   on_init: (time, post) => {
     return {
-      begin: time,
       count: 0,
     };
   },
 
   // When a post is made, add it to the state.
-  on_post: (state, post) => {
+  on_post: (state, time, user, data) => {
     return {
-      begin: state.begin,
-      count: state.count + parseInt(post.data, 16),
+      count: state.count + data.add,
     };
   },
 
   // Every second, add 1 to the state.
-  on_tick: (state, dt) => {
+  on_pass: (state, time, dt) => {
     return {
-      begin: state.begin,
       count: state.count + dt,
     };
   },
 
 });
 
-// Every second, add 255 to the global counter.
+// Every second, add 100 to the global counter.
 setInterval(() => {
-  roller.post("FF");
+  roller.post({add: 100});
 }, 1000);
 
 // At 30 FPS,  show the curent global counter.

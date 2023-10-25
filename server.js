@@ -1,8 +1,11 @@
-var port = Number(process.argv[2] || "7171");
-var ws = require('ws');
-var fs = require("fs-extra");
-var path = require("path");
-var lib = require("./lib.js");
+import ws from 'ws';
+import fs from 'fs-extra';
+import path from 'path';
+import lib from './lib.js';
+
+
+const { createServer } = ws;
+const port = Number(process.argv[2] || "7171");
 
 // Globals
 // =======

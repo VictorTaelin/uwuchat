@@ -1,14 +1,16 @@
+import { BSON } from "bson";
+
 const WATCH = 0;
 const UNWATCH = 1;
 const POST = 2;
 const SHOW = 3;
 const TIME = 4;
 
-// type RoomID    = U64
-// type PostID    = U64
-// type Time      = U64
-// type Address   = U64
-// type PostData  = Vec<U64>
+// type RoomID   = U64
+// type PostID   = U64
+// type Time     = U64
+// type Address  = U64
+// type PostData = Vec<U64>
 
 function hex_to_bytes(hex) {
   var arr = [];
@@ -114,6 +116,14 @@ function states_new() {
   return null;
 }
 
+function json_to_hex(json) {
+  return bytes_to_hex(BSON.serialize(json));
+}
+
+function hex_to_json(hex) {
+  return BSON.deserialize(hex_to_bytes(hex));
+}
+
 // Adds a state to the list of states
 // It only keeps log(N) states, where N is the amount of ticks recorded
 function states_push(states, new_state) {
@@ -142,7 +152,7 @@ function states_before(states, tick) {
   }
 }
 
-module.exports = {
+export default {
   WATCH,
   UNWATCH,
   POST,
@@ -161,7 +171,10 @@ module.exports = {
   string_to_hex,
   hex_to_string,
   check_hex,
+  json_to_hex,
+  hex_to_json,
   states_new,
   states_push,
   states_before,
 };
+

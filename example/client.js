@@ -1,11 +1,11 @@
-var client = require("./../client.js");
+import client from "./../client.js";
 var api = client({url: "ws://localhost:7171"});
 
 // When connected, watches room 0 and makes an example post.
 api.on_init(() => {
-  var room = "1234000000004321";
-  var user = "0000000077777777";
-  var post = "0102030405060708";
+  var room = 0x123;
+  var user = 0x777;
+  var post = {cmd: "init"};
 
   // Watches the room
   api.watch_room(room);
@@ -27,7 +27,7 @@ api.on_init(() => {
 // When there is a new posts, print all posts we have recorded.
 api.on_post((post, Posts) => {
   //console.clear();
-  console.log(JSON.stringify(post));
+  console.log(post);
   //console.log(JSON.stringify(Posts, null, 2));
 });
 
