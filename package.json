@@ -1,6 +1,6 @@
 {
   "name": "uwuchat",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "uwuchat",
   "main": "client.js",
   "scripts": {

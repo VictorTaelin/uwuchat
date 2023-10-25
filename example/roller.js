@@ -1,8 +1,14 @@
 var client = require("./../client.js")({url: "ws://localhost:7171"});
 
+// Counter
 var roller = client.roller({
-  room: "0000000000000555",
+
+  // Room ID
+  room: "0000000000000556",
+
+  // User ID
   user: "0000000000000000",
+
   // Initial state is just a counter
   on_init: (time, post) => {
     return {
@@ -10,6 +16,7 @@ var roller = client.roller({
       count: 0,
     };
   },
+
   // When a post is made, add it to the state.
   on_post: (state, post) => {
     return {
@@ -17,6 +24,7 @@ var roller = client.roller({
       count: state.count + parseInt(post.data, 16),
     };
   },
+
   // Every second, add 1 to the state.
   on_tick: (state, dt) => {
     return {

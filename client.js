@@ -126,7 +126,7 @@ module.exports = function client({url = "ws://localhost:7171"} = {}) {
         return send_post(room, user, data);
       },
       get_state: () => {
-        return on_tick(state.value, (get_time() - state.time) / 1000);
+        return state ? on_tick(state.value, (get_time() - state.time) / 1000) : null;
       },
       get_time: () => {
         return get_time();
