@@ -12,7 +12,7 @@ const uwuchat = client({url: "wss://server.uwu.games"});
 
 var roller = uwuchat.roller({
   room: 0x600,
-  user: 0x1,
+  user: 0x2,
 
   // Initial state:
   // - empty map of players
