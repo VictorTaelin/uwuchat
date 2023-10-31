@@ -1,5 +1,5 @@
 import client from "./../client.js";
-var api = client({url: "wss://server.uwu.games"});
+var api = client({url: "ws://server.uwu.games"});
 
 // When connected, watches room 0 and makes an example post.
 api.on_init(() => {

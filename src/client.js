@@ -5,7 +5,7 @@ import lib from "./lib.js";
 function clone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
-export default function client({ url = "wss://server.uwu.games" } = {}) {
+export default function client({ url = "ws://server.uwu.games" } = {}) {
     const ws = new WebSocket(url);
     const watching = {};
     function ws_send(buffer) {
