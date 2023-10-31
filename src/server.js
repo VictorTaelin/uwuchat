@@ -170,4 +170,4 @@ process.on("SIGINT", function () {
     wsServer.close();
     process.exit();
 });
-console.log("Started server on wsServer://localhost:" + port + ".");
+console.log("Started server on ws://localhost:" + port + ".");
