@@ -5,7 +5,7 @@ function clone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
 
-export default function client({ url = "ws://localhost:7171" }: { url?: string } = {}) {
+export default function client({ url = "wss://server.uwu.games" }: { url?: string } = {}) {
   const ws = new WebSocket(url);
   const watching: { [room: string]: boolean } = {};
 
