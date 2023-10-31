@@ -1,11 +1,11 @@
 import client from "./../src/client.js";
-var api = client({url: "ws://server.uwu.games:7171"});
+var api = client({ url: "ws://server.uwu.games" });
 
 // When connected, watches room 0 and makes an example post.
 api.on_init(() => {
   var room = 0x123;
   var user = 0x777;
-  var post = {cmd: "init"};
+  var post = { cmd: "init" };
 
   // Watches the room
   api.watch_room(room);
@@ -31,7 +31,7 @@ api.on_post((post, Posts) => {
   //console.log(JSON.stringify(Posts, null, 2));
 });
 
-process.on("SIGINT", function() {
+process.on("SIGINT", function () {
   console.log("Closing client...");
   wss.close();
   process.exit();

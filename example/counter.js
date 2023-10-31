@@ -1,5 +1,5 @@
 import client from "./../src/client.js";
-const uwuchat = client({url: "ws://server.uwu.games:7171"});
+const uwuchat = client({ url: "ws://server.uwu.games" });
 
 // Counter
 var roller = uwuchat.roller({
@@ -35,7 +35,7 @@ var roller = uwuchat.roller({
 
 // Every second, add 100 to the global counter.
 setInterval(() => {
-  roller.post({add: 100});
+  roller.post({ add: 100 });
 }, 1000);
 
 // At 30 FPS,  show the curent global counter.
@@ -48,7 +48,7 @@ setInterval(() => {
   }
 }, 1000 / 30);
 
-process.on("SIGINT", function() {
+process.on("SIGINT", function () {
   console.log("Closing client...");
   wss.close();
   process.exit();

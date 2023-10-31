@@ -161,7 +161,7 @@ export default function client({ url = "ws://server.uwu.games" }: { url?: string
     setInterval(ask_time, 2000)
   }
 
-  ws.onmessage = (msge : any) => {
+  ws.onmessage = (msge: any) => {
     const msgeData = new Uint8Array(msge.data)
     if (msgeData[0] === lib.SHOW) {
       const room = lib.hex_to_u64(lib.bytes_to_hex(msgeData.slice(1, 9)))
