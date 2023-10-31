@@ -1,5 +1,5 @@
 import client from "./../client.js";
-const uwuchat = client({url: "wss://server.uwu.games"});
+const uwuchat = client({url: "ws://server.uwu.games"});
 
 // Counter
 var roller = uwuchat.roller({

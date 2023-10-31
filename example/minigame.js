@@ -5,7 +5,7 @@
 import client from "./../client.js";
 import readline from "readline";
 
-const uwuchat = client({url: "wss://server.uwu.games"});
+const uwuchat = client({url: "ws://server.uwu.games"});
 
 // Server Logic
 // ------------
