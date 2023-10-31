@@ -1,5 +1,4 @@
-// import { BSON } from "bson"
-import BSON = require("bson");
+import { BSON } from "bson"
 const WATCH: number = 0;
 const UNWATCH: number = 1;
 const POST: number = 2;

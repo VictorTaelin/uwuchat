@@ -1,9 +1,8 @@
-import * as WebSocket from "ws";
-import * as fs from "fs-extra";
-import * as path from "path";
+import WebSocket from "ws";
+import fs from "fs-extra";
+import path from "path";
 import lib from "./lib";
 
-const { Server } = WebSocket;
 const port: number = Number(process.argv[2] || "7171");
 
 // Globals
@@ -167,7 +166,8 @@ const WebSockets = new WebSocket.Server({ port });
 
 WebSockets.on("connection", function connection(WebSocket: WebSocket) {
   console.log("[" + (++Connected) + " connected]");
-  WebSockets.on("message", function incoming(data) {
+  // WebSockets.on("message", function incoming(data: Iterable<number>) {
+  WebSocket.on("message", function incoming(data: Iterable<number>) {
     var msge = new Uint8Array(data);
     switch (msge[0]) {
       // User wants to watch a room
