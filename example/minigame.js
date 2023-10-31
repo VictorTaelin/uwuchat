@@ -2,10 +2,10 @@
 // moves through the map. Players can move left/right. The goal is to dodge the
 // boss by passing through it. If the boss hits you, you lose.
 
-import client from "./../client.js";
+import client from "./../src/client.js";
 import readline from "readline";
 
-const uwuchat = client({url: "ws://server.uwu.games"});
+const uwuchat = client({url: "ws://server.uwu.games:7171"});
 
 // Server Logic
 // ------------
