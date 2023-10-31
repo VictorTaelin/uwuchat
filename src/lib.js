@@ -1,6 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const bson_1 = require("bson");
+import { BSON } from "bson";
 const WATCH = 0;
 const UNWATCH = 1;
 const POST = 2;
@@ -95,10 +93,10 @@ function states_new() {
     return null;
 }
 function json_to_hex(json) {
-    return bytes_to_hex(bson_1.BSON.serialize(json));
+    return bytes_to_hex(BSON.serialize(json));
 }
 function hex_to_json(hex) {
-    return bson_1.BSON.deserialize(hex_to_bytes(hex));
+    return BSON.deserialize(hex_to_bytes(hex));
 }
 function states_push(states, new_state) {
     if (states === null) {
@@ -127,7 +125,7 @@ function states_before(states, tick) {
         }
     }
 }
-exports.default = {
+export default {
     WATCH,
     UNWATCH,
     POST,

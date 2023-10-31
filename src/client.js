@@ -1,14 +1,11 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const WebSocket = require("isomorphic-ws");
-const lib_1 = __importDefault(require("./lib"));
+import { createRequire as _createRequire } from "module";
+const __require = _createRequire(import.meta.url);
+const WebSocket = __require("isomorphic-ws");
+import lib from "./lib.js";
 function clone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
-function client({ url = "WebSocket://localhost:7171" } = {}) {
+export default function client({ url = "ws://localhost:7171" } = {}) {
     const ws = new WebSocket(url);
     const watching = {};
     function ws_send(buffer) {
@@ -33,11 +30,11 @@ function client({ url = "WebSocket://localhost:7171" } = {}) {
         on_post_callback = callback;
     }
     function send_post(post_room, post_user, post_json) {
-        const postRoom = lib_1.default.u64_to_hex(post_room);
-        const postUser = lib_1.default.u64_to_hex(post_user);
-        const post_data = lib_1.default.json_to_hex(post_json);
-        const msge_buff = lib_1.default.hexs_to_bytes([
-            lib_1.default.u8_to_hex(lib_1.default.POST),
+        const postRoom = lib.u64_to_hex(post_room);
+        const postUser = lib.u64_to_hex(post_user);
+        const post_data = lib.json_to_hex(post_json);
+        const msge_buff = lib.hexs_to_bytes([
+            lib.u8_to_hex(lib.POST),
             postRoom,
             postUser,
             post_data,
@@ -47,9 +44,9 @@ function client({ url = "WebSocket://localhost:7171" } = {}) {
     function watch_room(room_id) {
         if (!watching[room_id]) {
             watching[room_id] = true;
-            const msge_buff = lib_1.default.hexs_to_bytes([
-                lib_1.default.u8_to_hex(lib_1.default.WATCH),
-                lib_1.default.u64_to_hex(room_id),
+            const msge_buff = lib.hexs_to_bytes([
+                lib.u8_to_hex(lib.WATCH),
+                lib.u64_to_hex(room_id),
             ]);
             ws_send(msge_buff);
         }
@@ -57,9 +54,9 @@ function client({ url = "WebSocket://localhost:7171" } = {}) {
     function unwatch_room(room_id) {
         if (watching[room_id]) {
             watching[room_id] = false;
-            const msge_buff = lib_1.default.hexs_to_bytes([
-                lib_1.default.u8_to_hex(lib_1.default.UNWATCH),
-                lib_1.default.u64_to_hex(room_id),
+            const msge_buff = lib.hexs_to_bytes([
+                lib.u8_to_hex(lib.UNWATCH),
+                lib.u64_to_hex(room_id),
             ]);
             ws_send(msge_buff);
         }
@@ -70,9 +67,9 @@ function client({ url = "WebSocket://localhost:7171" } = {}) {
     function ask_time() {
         last_ask_time = Date.now();
         last_ask_numb = ++last_ask_numb;
-        ws_send(lib_1.default.hexs_to_bytes([
-            lib_1.default.u8_to_hex(lib_1.default.TIME),
-            lib_1.default.u64_to_hex(last_ask_numb),
+        ws_send(lib.hexs_to_bytes([
+            lib.u8_to_hex(lib.TIME),
+            lib.u64_to_hex(last_ask_numb),
         ]));
     }
     function roller({ room, user, on_init, on_pass, on_post, on_tick, }) {
@@ -138,18 +135,18 @@ function client({ url = "WebSocket://localhost:7171" } = {}) {
     };
     ws.onmessage = (msge) => {
         const msgeData = new Uint8Array(msge.data);
-        if (msgeData[0] === lib_1.default.SHOW) {
-            const room = lib_1.default.hex_to_u64(lib_1.default.bytes_to_hex(msgeData.slice(1, 9)));
-            const time = lib_1.default.hex_to_u64(lib_1.default.bytes_to_hex(msgeData.slice(9, 17)));
-            const user = lib_1.default.hex_to_u64(lib_1.default.bytes_to_hex(msgeData.slice(17, 25)));
-            const data = lib_1.default.hex_to_json(lib_1.default.bytes_to_hex(msgeData.slice(25, msgeData.length)));
+        if (msgeData[0] === lib.SHOW) {
+            const room = lib.hex_to_u64(lib.bytes_to_hex(msgeData.slice(1, 9)));
+            const time = lib.hex_to_u64(lib.bytes_to_hex(msgeData.slice(9, 17)));
+            const user = lib.hex_to_u64(lib.bytes_to_hex(msgeData.slice(17, 25)));
+            const data = lib.hex_to_json(lib.bytes_to_hex(msgeData.slice(25, msgeData.length)));
             if (on_post_callback) {
                 on_post_callback({ room, time, user, data });
             }
         }
-        if (msgeData[0] === lib_1.default.TIME) {
-            const reported_server_time = lib_1.default.hex_to_u64(lib_1.default.bytes_to_hex(msgeData.slice(1, 9)));
-            const reply_numb = lib_1.default.hex_to_u64(lib_1.default.bytes_to_hex(msgeData.slice(9, 17)));
+        if (msgeData[0] === lib.TIME) {
+            const reported_server_time = lib.hex_to_u64(lib.bytes_to_hex(msgeData.slice(1, 9)));
+            const reply_numb = lib.hex_to_u64(lib.bytes_to_hex(msgeData.slice(9, 17)));
             if (last_ask_time !== null && last_ask_numb === reply_numb) {
                 ping = (Date.now() - last_ask_time) / 2;
                 const local_time = Date.now();
@@ -169,7 +166,6 @@ function client({ url = "WebSocket://localhost:7171" } = {}) {
         watch_room,
         unwatch_room,
         get_time,
-        lib: lib_1.default,
+        lib,
     };
 }
-exports.default = client;

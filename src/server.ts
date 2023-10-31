@@ -1,7 +1,7 @@
-import WebSocket from "ws";
+import ws from "ws";
 import fs from "fs-extra";
 import path from "path";
-import lib from "./lib";
+import lib from "./lib.js";
 
 const port: number = Number(process.argv[2] || "7171");
 
@@ -13,7 +13,7 @@ interface RoomPosts {
 }
 
 interface Watchlist {
-  [room: string]: WebSocket[];
+  [room: string]: ws[];
 }
 
 var RoomPosts: RoomPosts = {};
@@ -55,7 +55,7 @@ function get_time() {
 }
 
 // Adds a user to a room's watchlist
-function watch_room(room_name: string, WebSocket: WebSocket) {
+function watch_room(room_name: string, ws: ws) {
   // Creates watcher list
   if (!Watchlist[room_name]) {
     Watchlist[room_name] = [];
@@ -66,7 +66,7 @@ function watch_room(room_name: string, WebSocket: WebSocket) {
 
   // Makes sure user isn't watching already
   for (var i = 0; i < watchlist.length; ++i) {
-    if (watchlist[i] === WebSocket) {
+    if (watchlist[i] === ws) {
       return;
     }
   }
@@ -74,24 +74,24 @@ function watch_room(room_name: string, WebSocket: WebSocket) {
   // Sends old messages
   if (RoomPosts[room_name]) {
     for (var i = 0; i < RoomPosts[room_name].length; ++i) {
-      // WebSocket.send(Buffer.from(RoomPosts[room_name][i]).buffer);
-      // WebSocket.send(RoomPosts[room_name][i].buffer);
-      WebSocket.send(RoomPosts[room_name][i]);
+      // ws.send(Buffer.from(RoomPosts[room_name][i]).buffer);
+      // ws.send(RoomPosts[room_name][i].buffer);
+      ws.send(RoomPosts[room_name][i]);
     }
   }
 
   // Adds user to watcher list
-  watchlist.push(WebSocket);
+  watchlist.push(ws);
 }
 
 // Removes a user from a room's watchlist
-function unwatch_room(room_name: string, WebSocket: WebSocket) {
+function unwatch_room(room_name: string, ws: ws) {
   // Gets watcher list
   var watchlist = Watchlist[room_name] || [];
 
   // Removes user from watcher list
   for (var i = 0; i < watchlist.length; ++i) {
-    if (watchlist[i] === WebSocket) {
+    if (watchlist[i] === ws) {
       for (var j = i; j < watchlist.length - 1; ++j) {
         watchlist[j] = watchlist[j + 1];
       }
@@ -140,8 +140,8 @@ function save_post(post_room: string | null, post_user: string | null, post_data
   // Broadcasts
   if (Watchlist[valid_post_room]) {
     log_msg += "- broadcasting to " + Watchlist[valid_post_room].length + " watcher(s).\n";
-    for (var WebSocket of Watchlist[valid_post_room]) {
-      WebSocket.send(post_buff);
+    for (var ws of Watchlist[valid_post_room]) {
+      ws.send(post_buff);
     }
   }
 
@@ -160,26 +160,26 @@ function save_post(post_room: string | null, post_user: string | null, post_data
 // TCP API
 // =======
 
-const WebSockets = new WebSocket.Server({ port });
+const wss = new ws.Server({ port });
 
-// WebSockets.binaryType = "arraybuffer";
+// wss.binaryType = "arraybuffer";
 
-WebSockets.on("connection", function connection(WebSocket: WebSocket) {
+wss.on("connection", function connection(ws: ws) {
   console.log("[" + (++Connected) + " connected]");
-  // WebSockets.on("message", function incoming(data: Iterable<number>) {
-  WebSocket.on("message", function incoming(data: Iterable<number>) {
+  // wss.on("message", function incoming(data: Iterable<number>) {
+  ws.on("message", function incoming(data: Iterable<number>) {
     var msge = new Uint8Array(data);
     switch (msge[0]) {
       // User wants to watch a room
       case lib.WATCH:
         var room = lib.bytes_to_hex(msge.slice(1, 9));
-        watch_room(room, WebSocket);
+        watch_room(room, ws);
         break;
 
       // User wants to unwatch a room
       case lib.UNWATCH:
         var room = lib.bytes_to_hex(msge.slice(1, 9));
-        unwatch_room(room, WebSocket);
+        unwatch_room(room, ws);
         break;
 
       // User wants to know the time
@@ -189,7 +189,7 @@ WebSockets.on("connection", function connection(WebSocket: WebSocket) {
           lib.u64_to_hex(Date.now()),
           lib.bytes_to_hex(msge.slice(1, 9)),
         ]);
-        WebSocket.send(msge_buff);
+        ws.send(msge_buff);
         break;
 
       // User wants to post a message
@@ -202,9 +202,9 @@ WebSockets.on("connection", function connection(WebSocket: WebSocket) {
     }
   });
 
-  WebSocket.on("close", function () {
+  ws.on("close", function () {
     for (var room_name in Watchlist) {
-      Watchlist[room_name] = Watchlist[room_name].filter((watcher) => watcher !== WebSocket);
+      Watchlist[room_name] = Watchlist[room_name].filter((watcher) => watcher !== ws);
     }
     console.log("[" + (--Connected) + " connected]");
   });
@@ -212,8 +212,8 @@ WebSockets.on("connection", function connection(WebSocket: WebSocket) {
 
 process.on("SIGINT", function () {
   console.log("\nClosing server...");
-  WebSockets.close();
+  wss.close();
   process.exit();
 });
 
-console.log("Started server on WebSocket://localhost:" + port + ".");
+console.log("Started server on ws://localhost:" + port + ".");
