@@ -3,8 +3,8 @@ import fs from "fs-extra";
 import path from "path";
 import lib from "./lib.js";
 const port = Number(process.argv[2] || "7171");
-let RoomPosts = {};
-let Watchlist = {};
+var RoomPosts = {};
+var Watchlist = {};
 var Connected = 0;
 // Startup
 // =======
@@ -14,7 +14,7 @@ if (!fs.existsSync("data")) {
 }
 // Loads existing posts
 var files = fs.readdirSync("data");
-for (var file of files) {
+for (let file of files) {
     if (file.slice(-5) === ".room") {
         var room_name = file.slice(0, -5);
         var file_data = fs.readFileSync(path.join("data", file));
@@ -36,7 +36,7 @@ function get_time() {
     return Date.now();
 }
 // Adds a user to a room's watchlist
-function watch_room(room_name, wsServer) {
+function watch_room(room_name, wsRecevier) {
     // Creates watcher list
     if (!Watchlist[room_name]) {
         Watchlist[room_name] = [];
@@ -44,37 +44,34 @@ function watch_room(room_name, wsServer) {
     // Gets watcher list
     var watchlist = Watchlist[room_name];
     // Makes sure user isn't watching already
-    for (var i = 0; i < watchlist.length; ++i) {
-        if (watchlist[i] === wsServer) {
+    for (let i = 0; i < watchlist.length; ++i) {
+        if (watchlist[i] === wsRecevier) {
             return;
         }
     }
     // Sends old messages
     if (RoomPosts[room_name]) {
-        for (var i = 0; i < RoomPosts[room_name].length; ++i) {
-            // wsServer.send(Buffer.from(RoomPosts[room_name][i]).buffer);
-            // wsServer.send(RoomPosts[room_name][i].buffer);
-            wsServer.send(RoomPosts[room_name][i]);
+        for (let i = 0; i < RoomPosts[room_name].length; ++i) {
+            wsRecevier.send(RoomPosts[room_name][i]);
         }
     }
     // Adds user to watcher list
-    watchlist.push(wsServer);
+    watchlist.push(wsRecevier);
 }
 // Removes a user from a room's watchlist
-function unwatch_room(room_name, wsServer) {
+function unwatch_room(room_name, wsRecevier) {
     // Gets watcher list
     var watchlist = Watchlist[room_name] || [];
     // Removes user from watcher list
-    for (var i = 0; i < watchlist.length; ++i) {
-        if (watchlist[i] === wsServer) {
-            for (var j = i; j < watchlist.length - 1; ++j) {
+    for (let i = 0; i < watchlist.length; ++i) {
+        if (watchlist[i] === wsRecevier) {
+            for (let j = i; j < watchlist.length - 1; ++j) {
                 watchlist[j] = watchlist[j + 1];
             }
             return;
         }
     }
 }
-// Saves a post (room id, user address, data)
 // Saves a post (room id, user address, data)
 function save_post(post_room, post_user, post_data) {
     if (!post_room || !post_user || !post_data) {
@@ -107,8 +104,8 @@ function save_post(post_room, post_user, post_data) {
     // Broadcasts
     if (Watchlist[valid_post_room]) {
         log_msg += "- broadcasting to " + Watchlist[valid_post_room].length + " watcher(s).\n";
-        for (var wsServer of Watchlist[valid_post_room]) {
-            wsServer.send(post_buff);
+        for (let wsRecevier of Watchlist[valid_post_room]) {
+            wsRecevier.send(post_buff);
         }
     }
     // Create file for this room
@@ -123,22 +120,21 @@ function save_post(post_room, post_user, post_data) {
 // TCP API
 // =======
 const wsServer = new ws.Server({ port });
-// wsServer.binaryType = "arraybuffer";
-wsServer.on("connection", function connection(wsServer) {
+// wss.binaryType = "arraybuffer"
+wsServer.on("connection", function connection(wsRecevier) {
     console.log("[" + (++Connected) + " connected]");
-    // wsServer.on("message", function incoming(data: Iterable<number>) {
-    wsServer.on("message", function incoming(data) {
+    wsRecevier.on("message", function incoming(data) {
         var msge = new Uint8Array(data);
         switch (msge[0]) {
             // User wants to watch a room
             case lib.WATCH:
                 var room = lib.bytes_to_hex(msge.slice(1, 9));
-                watch_room(room, wsServer);
+                watch_room(room, wsRecevier);
                 break;
             // User wants to unwatch a room
             case lib.UNWATCH:
                 var room = lib.bytes_to_hex(msge.slice(1, 9));
-                unwatch_room(room, wsServer);
+                unwatch_room(room, wsRecevier);
                 break;
             // User wants to know the time
             case lib.TIME:
@@ -147,7 +143,7 @@ wsServer.on("connection", function connection(wsServer) {
                     lib.u64_to_hex(Date.now()),
                     lib.bytes_to_hex(msge.slice(1, 9)),
                 ]);
-                wsServer.send(msge_buff);
+                wsRecevier.send(msge_buff);
                 break;
             // User wants to post a message
             case lib.POST:
@@ -158,9 +154,9 @@ wsServer.on("connection", function connection(wsServer) {
                 break;
         }
     });
-    wsServer.on("close", function () {
-        for (var room_name in Watchlist) {
-            Watchlist[room_name] = Watchlist[room_name].filter((watcher) => watcher !== wsServer);
+    wsRecevier.on("close", function () {
+        for (let room_name in Watchlist) {
+            Watchlist[room_name] = Watchlist[room_name].filter((watcher) => watcher !== wsRecevier);
         }
         console.log("[" + (--Connected) + " connected]");
     });

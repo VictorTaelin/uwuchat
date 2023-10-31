@@ -1,143 +1,143 @@
 import { BSON } from "bson"
-const WATCH: number = 0;
-const UNWATCH: number = 1;
-const POST: number = 2;
-const SHOW: number = 3;
-const TIME: number = 4;
+const WATCH: number = 0
+const UNWATCH: number = 1
+const POST: number = 2
+const SHOW: number = 3
+const TIME: number = 4
 
 function hex_to_bytes(hex: string): Uint8Array {
-  const arr = [];
+  const arr = []
   for (let i = 0; i < hex.length / 2; ++i) {
-    arr.push((parseInt(hex[i * 2 + 0], 16) << 4) | parseInt(hex[i * 2 + 1], 16));
+    arr.push((parseInt(hex[i * 2 + 0], 16) << 4) | parseInt(hex[i * 2 + 1], 16))
   }
-  return new Uint8Array(arr);
+  return new Uint8Array(arr)
 }
 
-const hex_char = "0123456789abcdef".split("");
+const hex_char = "0123456789abcdef".split("")
 function bytes_to_hex(buf: Uint8Array): string {
-  let hex = "";
+  let hex = ""
   for (let i = 0; i < buf.length; ++i) {
-    hex += hex_char[buf[i] >>> 4] + hex_char[buf[i] & 0xf];
+    hex += hex_char[buf[i] >>> 4] + hex_char[buf[i] & 0xf]
   }
-  return hex;
+  return hex
 }
 
 function hex_join(arr: string[]): string {
-  let res = "";
+  let res = ""
   for (let i = 0; i < arr.length; ++i) {
-    res += arr[i];
+    res += arr[i]
   }
-  return res;
+  return res
 }
 
 function hexs_to_bytes(arr: string[]): Uint8Array {
-  return hex_to_bytes(hex_join(arr));
+  return hex_to_bytes(hex_join(arr))
 }
 
 function u8_to_hex(num: number): string {
-  return ("00" + num.toString(16)).slice(-2);
+  return ("00" + num.toString(16)).slice(-2)
 }
 
 function hex_to_u8(hex: string): number {
-  return parseInt(hex, 16);
+  return parseInt(hex, 16)
 }
 
 function hex_to_u32(hex: string): number {
-  return parseInt(hex.slice(-32), 16);
+  return parseInt(hex.slice(-32), 16)
 }
 
 function hex_to_u64(hex: string): number {
-  return parseInt(hex.slice(-64), 16);
+  return parseInt(hex.slice(-64), 16)
 }
 
 function uN_to_hex(N: number, num: number): string {
-  let hex = "";
+  let hex = ""
   for (let i = 0; i < N / 4; ++i) {
-    hex += hex_char[(num / (2 ** ((N / 4 - i - 1) * 4))) & 0xf];
+    hex += hex_char[(num / (2 ** ((N / 4 - i - 1) * 4))) & 0xf]
   }
-  return hex;
+  return hex
 }
 
 function u32_to_hex(num: number): string {
-  return uN_to_hex(32, num);
+  return uN_to_hex(32, num)
 }
 
 function u64_to_hex(num: number): string {
-  return uN_to_hex(64, num);
+  return uN_to_hex(64, num)
 }
 
 function check_hex(bits: number | null, hex: string): string | null {
   if (typeof hex !== "string") {
-    return null;
+    return null
   }
   if (!/^[a-fA-F0-9]*$/.test(hex)) {
-    return null;
+    return null
   }
   if (bits) {
     while (hex.length * 4 < bits) {
-      hex = "0" + hex;
+      hex = "0" + hex
     }
     if (hex.length * 4 > bits) {
-      hex = hex.slice(0, Math.floor(bits / 4));
+      hex = hex.slice(0, Math.floor(bits / 4))
     }
-    return hex.toLowerCase();
+    return hex.toLowerCase()
   } else {
-    hex = hex.length % 2 === 1 ? "0" + hex : hex;
-    return hex.toLowerCase();
+    hex = hex.length % 2 === 1 ? "0" + hex : hex
+    return hex.toLowerCase()
   }
 }
 
-const utf8_encoder = new TextEncoder();
+const utf8_encoder = new TextEncoder()
 function string_to_bytes(str: string): Uint8Array {
-  return utf8_encoder.encode(str);
+  return utf8_encoder.encode(str)
 }
 
-const utf8_decoder = new TextDecoder();
+const utf8_decoder = new TextDecoder()
 function bytes_to_string(buf: Uint8Array): string {
-  return utf8_decoder.decode(buf);
+  return utf8_decoder.decode(buf)
 }
 
 function string_to_hex(str: string): string {
-  return bytes_to_hex(string_to_bytes(str));
+  return bytes_to_hex(string_to_bytes(str))
 }
 
 function hex_to_string(hex: string): string {
-  return bytes_to_string(hex_to_bytes(hex));
+  return bytes_to_string(hex_to_bytes(hex))
 }
 
 function states_new(): null {
-  return null;
+  return null
 }
 
 function json_to_hex(json: Record<string, any>): string {
-  return bytes_to_hex(BSON.serialize(json));
+  return bytes_to_hex(BSON.serialize(json))
 }
 
 function hex_to_json(hex: string): Record<string, any> {
-  return BSON.deserialize(hex_to_bytes(hex));
+  return BSON.deserialize(hex_to_bytes(hex))
 }
 
 function states_push(states: null | { bit: number; current: any; older: null | any }, new_state: any): { bit: number; current: any; older: null | any } {
   if (states === null) {
-    return { bit: 0, current: new_state, older: null };
+    return { bit: 0, current: new_state, older: null }
   } else {
-    const { bit, current, older } = states;
+    const { bit, current, older } = states
     if (bit === 0) {
-      return { bit: 1, current, older };
+      return { bit: 1, current, older }
     } else {
-      return { bit: 0, current: new_state, older: states_push(older, current) };
+      return { bit: 0, current: new_state, older: states_push(older, current) }
     }
   }
 }
 
 function states_before(states: null | { bit: number; current: { tick: number }; older: null | any }, tick: number): null | any {
   if (states === null) {
-    return null;
+    return null
   } else {
     if (states.current.tick < tick) {
-      return states.current;
+      return states.current
     } else {
-      return states_before(states.older, tick);
+      return states_before(states.older, tick)
     }
   }
 }
@@ -166,4 +166,4 @@ export default {
   states_new,
   states_push,
   states_before,
-};
+}

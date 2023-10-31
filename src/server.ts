@@ -16,21 +16,21 @@ interface Watchlist {
   [room: string]: ws[]
 }
 
-let RoomPosts: RoomPosts = {}
-let Watchlist: Watchlist = {}
-var Connected = 0;
+var RoomPosts: RoomPosts = {}
+var Watchlist: Watchlist = {}
+var Connected = 0
 
 // Startup
 // =======
 
 // Creates the data directory
 if (!fs.existsSync("data")) {
-    fs.mkdirSync("data")
-  }
-  
-  // Loads existing posts
+  fs.mkdirSync("data")
+}
+
+// Loads existing posts
 var files: string[] = fs.readdirSync("data")
-for (var file of files) {
+for (let file of files) {
   if (file.slice(-5) === ".room") {
     var room_name: string = file.slice(0, -5)
     var file_data: Buffer = fs.readFileSync(path.join("data", file))
@@ -55,44 +55,42 @@ function get_time() {
 }
 
 // Adds a user to a room's watchlist
-function watch_room(room_name: string, wsServer: ws) {
+function watch_room(room_name: string, wsRecevier: ws) {
   // Creates watcher list
   if (!Watchlist[room_name]) {
     Watchlist[room_name] = []
   }
 
   // Gets watcher list
-  var watchlist = Watchlist[room_name];
+  var watchlist = Watchlist[room_name]
 
   // Makes sure user isn't watching already
-  for (var i = 0; i < watchlist.length; ++i) {
-    if (watchlist[i] === wsServer) {
+  for (let i = 0; i < watchlist.length; ++i) {
+    if (watchlist[i] === wsRecevier) {
       return
     }
   }
 
   // Sends old messages
   if (RoomPosts[room_name]) {
-    for (var i = 0; i < RoomPosts[room_name].length; ++i) {
-      // wsServer.send(Buffer.from(RoomPosts[room_name][i]).buffer);
-      // wsServer.send(RoomPosts[room_name][i].buffer);
-      wsServer.send(RoomPosts[room_name][i])
+    for (let i = 0; i < RoomPosts[room_name].length; ++i) {
+      wsRecevier.send(RoomPosts[room_name][i])
     }
   }
 
   // Adds user to watcher list
-  watchlist.push(wsServer)
+  watchlist.push(wsRecevier)
 }
 
 // Removes a user from a room's watchlist
-function unwatch_room(room_name: string, wsServer: ws) {
+function unwatch_room(room_name: string, wsRecevier: ws) {
   // Gets watcher list
   var watchlist = Watchlist[room_name] || []
 
   // Removes user from watcher list
-  for (var i = 0; i < watchlist.length; ++i) {
-    if (watchlist[i] === wsServer) {
-      for (var j = i; j < watchlist.length - 1; ++j) {
+  for (let i = 0; i < watchlist.length; ++i) {
+    if (watchlist[i] === wsRecevier) {
+      for (let j = i; j < watchlist.length - 1; ++j) {
         watchlist[j] = watchlist[j + 1]
       }
       return
@@ -100,7 +98,6 @@ function unwatch_room(room_name: string, wsServer: ws) {
   }
 }
 
-// Saves a post (room id, user address, data)
 // Saves a post (room id, user address, data)
 function save_post(post_room: string | null, post_user: string | null, post_data: string | null) {
   if (!post_room || !post_user || !post_data) {
@@ -140,8 +137,8 @@ function save_post(post_room: string | null, post_user: string | null, post_data
   // Broadcasts
   if (Watchlist[valid_post_room]) {
     log_msg += "- broadcasting to " + Watchlist[valid_post_room].length + " watcher(s).\n"
-    for (var wsServer of Watchlist[valid_post_room]) {
-      wsServer.send(post_buff)
+    for (let wsRecevier of Watchlist[valid_post_room]) {
+      wsRecevier.send(post_buff)
     }
   }
 
@@ -162,24 +159,23 @@ function save_post(post_room: string | null, post_user: string | null, post_data
 
 const wsServer = new ws.Server({ port })
 
-// wsServer.binaryType = "arraybuffer";
+// wss.binaryType = "arraybuffer"
 
-wsServer.on("connection", function connection(wsServer: ws) {
+wsServer.on("connection", function connection(wsRecevier: ws) {
   console.log("[" + (++Connected) + " connected]")
-  // wsServer.on("message", function incoming(data: Iterable<number>) {
-  wsServer.on("message", function incoming(data: Iterable<number>) {
+  wsRecevier.on("message", function incoming(data: Iterable<number>) {
     var msge = new Uint8Array(data)
     switch (msge[0]) {
       // User wants to watch a room
       case lib.WATCH:
         var room = lib.bytes_to_hex(msge.slice(1, 9))
-        watch_room(room, wsServer)
+        watch_room(room, wsRecevier)
         break
 
       // User wants to unwatch a room
       case lib.UNWATCH:
         var room = lib.bytes_to_hex(msge.slice(1, 9))
-        unwatch_room(room, wsServer)
+        unwatch_room(room, wsRecevier)
         break
 
       // User wants to know the time
@@ -189,7 +185,7 @@ wsServer.on("connection", function connection(wsServer: ws) {
           lib.u64_to_hex(Date.now()),
           lib.bytes_to_hex(msge.slice(1, 9)),
         ])
-        wsServer.send(msge_buff)
+        wsRecevier.send(msge_buff)
         break
 
       // User wants to post a message
@@ -198,13 +194,13 @@ wsServer.on("connection", function connection(wsServer: ws) {
         var post_user = lib.bytes_to_hex(msge.slice(9, 17))
         var post_data = lib.bytes_to_hex(msge.slice(17, msge.length))
         save_post(post_room, post_user, post_data)
-        break;
+        break
     }
   })
 
-  wsServer.on("close", function () {
-    for (var room_name in Watchlist) {
-      Watchlist[room_name] = Watchlist[room_name].filter((watcher) => watcher !== wsServer)
+  wsRecevier.on("close", function () {
+    for (let room_name in Watchlist) {
+      Watchlist[room_name] = Watchlist[room_name].filter((watcher) => watcher !== wsRecevier)
     }
     console.log("[" + (--Connected) + " connected]")
   })
@@ -212,7 +208,7 @@ wsServer.on("connection", function connection(wsServer: ws) {
 
 process.on("SIGINT", function () {
   console.log("\nClosing server...")
-  wsServer.close();
+  wsServer.close()
   process.exit()
 })
 

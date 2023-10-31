@@ -1,6 +1,4 @@
-import { createRequire as _createRequire } from "module";
-const __require = _createRequire(import.meta.url);
-const WebSocket = __require("isomorphic-ws");
+import WebSocket from "isomorphic-ws";
 import lib from "./lib.js";
 function clone(obj) {
     return JSON.parse(JSON.stringify(obj));
