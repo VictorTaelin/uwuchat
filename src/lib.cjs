@@ -1,30 +1,29 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// import { BSON } from "bson"
-var BSON = require("bson");
-var WATCH = 0;
-var UNWATCH = 1;
-var POST = 2;
-var SHOW = 3;
-var TIME = 4;
+const bson_1 = require("bson");
+const WATCH = 0;
+const UNWATCH = 1;
+const POST = 2;
+const SHOW = 3;
+const TIME = 4;
 function hex_to_bytes(hex) {
-    var arr = [];
-    for (var i = 0; i < hex.length / 2; ++i) {
+    const arr = [];
+    for (let i = 0; i < hex.length / 2; ++i) {
         arr.push((parseInt(hex[i * 2 + 0], 16) << 4) | parseInt(hex[i * 2 + 1], 16));
     }
     return new Uint8Array(arr);
 }
-var hex_char = "0123456789abcdef".split("");
+const hex_char = "0123456789abcdef".split("");
 function bytes_to_hex(buf) {
-    var hex = "";
-    for (var i = 0; i < buf.length; ++i) {
+    let hex = "";
+    for (let i = 0; i < buf.length; ++i) {
         hex += hex_char[buf[i] >>> 4] + hex_char[buf[i] & 0xf];
     }
     return hex;
 }
 function hex_join(arr) {
-    var res = "";
-    for (var i = 0; i < arr.length; ++i) {
+    let res = "";
+    for (let i = 0; i < arr.length; ++i) {
         res += arr[i];
     }
     return res;
@@ -45,9 +44,9 @@ function hex_to_u64(hex) {
     return parseInt(hex.slice(-64), 16);
 }
 function uN_to_hex(N, num) {
-    var hex = "";
-    for (var i = 0; i < N / 4; ++i) {
-        hex += hex_char[(num / (Math.pow(2, ((N / 4 - i - 1) * 4)))) & 0xf];
+    let hex = "";
+    for (let i = 0; i < N / 4; ++i) {
+        hex += hex_char[(num / (2 ** ((N / 4 - i - 1) * 4))) & 0xf];
     }
     return hex;
 }
@@ -78,11 +77,11 @@ function check_hex(bits, hex) {
         return hex.toLowerCase();
     }
 }
-var utf8_encoder = new TextEncoder();
+const utf8_encoder = new TextEncoder();
 function string_to_bytes(str) {
     return utf8_encoder.encode(str);
 }
-var utf8_decoder = new TextDecoder();
+const utf8_decoder = new TextDecoder();
 function bytes_to_string(buf) {
     return utf8_decoder.decode(buf);
 }
@@ -96,19 +95,19 @@ function states_new() {
     return null;
 }
 function json_to_hex(json) {
-    return bytes_to_hex(BSON.serialize(json));
+    return bytes_to_hex(bson_1.BSON.serialize(json));
 }
 function hex_to_json(hex) {
-    return BSON.deserialize(hex_to_bytes(hex));
+    return bson_1.BSON.deserialize(hex_to_bytes(hex));
 }
 function states_push(states, new_state) {
     if (states === null) {
         return { bit: 0, current: new_state, older: null };
     }
     else {
-        var bit = states.bit, current = states.current, older = states.older;
+        const { bit, current, older } = states;
         if (bit === 0) {
-            return { bit: 1, current: current, older: older };
+            return { bit: 1, current, older };
         }
         else {
             return { bit: 0, current: new_state, older: states_push(older, current) };
@@ -129,27 +128,27 @@ function states_before(states, tick) {
     }
 }
 exports.default = {
-    WATCH: WATCH,
-    UNWATCH: UNWATCH,
-    POST: POST,
-    SHOW: SHOW,
-    TIME: TIME,
-    hex_to_bytes: hex_to_bytes,
-    bytes_to_hex: bytes_to_hex,
-    hexs_to_bytes: hexs_to_bytes,
-    hex_join: hex_join,
-    u8_to_hex: u8_to_hex,
-    hex_to_u8: hex_to_u8,
-    u32_to_hex: u32_to_hex,
-    hex_to_u32: hex_to_u32,
-    u64_to_hex: u64_to_hex,
-    hex_to_u64: hex_to_u64,
-    string_to_hex: string_to_hex,
-    hex_to_string: hex_to_string,
-    check_hex: check_hex,
-    json_to_hex: json_to_hex,
-    hex_to_json: hex_to_json,
-    states_new: states_new,
-    states_push: states_push,
-    states_before: states_before,
+    WATCH,
+    UNWATCH,
+    POST,
+    SHOW,
+    TIME,
+    hex_to_bytes,
+    bytes_to_hex,
+    hexs_to_bytes,
+    hex_join,
+    u8_to_hex,
+    hex_to_u8,
+    u32_to_hex,
+    hex_to_u32,
+    u64_to_hex,
+    hex_to_u64,
+    string_to_hex,
+    hex_to_string,
+    check_hex,
+    json_to_hex,
+    hex_to_json,
+    states_new,
+    states_push,
+    states_before,
 };
