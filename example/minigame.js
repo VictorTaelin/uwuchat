@@ -2,17 +2,17 @@
 // moves through the map. Players can move left/right. The goal is to dodge the
 // boss by passing through it. If the boss hits you, you lose.
 
-import client from "./../client.js";
+import client from "./../src/client.js";
 import readline from "readline";
 
-const uwuchat = client({url: "wss://server.uwu.games"});
+const uwuchat = client({ url: "ws://server.uwu.games" });
 
 // Server Logic
 // ------------
 
 var roller = uwuchat.roller({
   room: 0x600,
-  user: 0x1,
+  user: 0x2,
 
   // Initial state:
   // - empty map of players
@@ -20,7 +20,7 @@ var roller = uwuchat.roller({
   on_init: (time, user, data) => {
     return {
       players: {},
-      boss: {name: "@", pos: {x: 0, y: 0}}
+      boss: { name: "@", pos: { x: 0, y: 0 } }
     };
   },
 
@@ -30,10 +30,10 @@ var roller = uwuchat.roller({
     if (state.players[user] === undefined) {
       state.players[user] = {
         name: String(user),
-        pos: {x: 16, y: 0},
+        pos: { x: 16, y: 0 },
       };
 
-    // Otherwise, move it
+      // Otherwise, move it
     } else {
       if (data.cmd === "left") {
         state.players[user].pos.x -= 2;
@@ -57,7 +57,7 @@ var roller = uwuchat.roller({
 
       // Moves it to inside the map
       if (player.pos.x >= 31) { player.pos.x = 31; }
-      if (player.pos.x <   0) { player.pos.x = 0; }
+      if (player.pos.x < 0) { player.pos.x = 0; }
 
       // Kills it if boss is over it
       if (player.pos.x == state.boss.pos.x) {
@@ -67,7 +67,7 @@ var roller = uwuchat.roller({
 
     return state;
   }]
-  
+
 });
 
 // Client Inputs
@@ -78,11 +78,11 @@ process.stdin.setRawMode(true);
 
 process.stdin.on("keypress", (str, key) => {
   if (key.name === "a") {
-    roller.post({cmd: "left"});
+    roller.post({ cmd: "left" });
   }
 
   if (key.name === "d") {
-    roller.post({cmd: "right"});
+    roller.post({ cmd: "right" });
   }
 
   if (key.sequence === "\u0003") {
